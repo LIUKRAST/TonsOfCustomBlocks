@@ -1,0 +1,6 @@
+{
+  "parent": "frozenblock:block/vertical_connected_top",
+  "textures": {
+    "texture": "frozenblock:block/fancy_birch_planks"
+  }
+}

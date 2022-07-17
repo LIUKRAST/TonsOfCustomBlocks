@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "connected_down=false,connected_up=false": {
+      "model": "frozenblock:block/fancy_birch_planks"
+    },
+    "connected_down=true,connected_up=false": {
+      "model": "frozenblock:block/fancy_birch_planks_top"
+    },
+    "connected_down=false,connected_up=true": {
+      "model": "frozenblock:block/fancy_birch_planks_bottom"
+    },
+    "connected_down=true,connected_up=true": {
+      "model": "frozenblock:block/fancy_birch_planks_middle"
+    }
+  }
+}

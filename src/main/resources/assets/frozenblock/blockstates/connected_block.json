@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": {"model": "frozenblock:block/connected_block"}
+  }
+}
