@@ -1,16 +1,13 @@
 package net.frozenblock.api.client.block;
 
 import com.mojang.datafixers.util.Pair;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
-import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
+import net.frozenblock.api.server.properties.FrozenBlockProperties;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.render.model.*;
 import net.minecraft.client.render.model.json.ModelOverrideList;
@@ -18,7 +15,6 @@ import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -29,15 +25,14 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@Environment(EnvType.CLIENT)
-public class ConnectedBlockModel extends BlockModel {
-
+public class VerticalConnectedBlockModel extends BlockModel {
     private final SpriteIdentifier SPRITE_IDENTIFIER;
 
     private Sprite SPRITE;
+
     private Mesh mesh;
 
-    public ConnectedBlockModel(Identifier texture, Identifier modelID) {
+    public VerticalConnectedBlockModel(Identifier texture, Identifier modelID) {
         super(modelID);
         this.SPRITE_IDENTIFIER = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, texture);
     }
@@ -52,18 +47,15 @@ public class ConnectedBlockModel extends BlockModel {
         return List.of(SPRITE_IDENTIFIER);
     }
 
-
     @Override
     public BakedModel bake(ModelLoader loader, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings rotationContainer, Identifier modelId) {
         SPRITE = textureGetter.apply(SPRITE_IDENTIFIER);
         Renderer renderer = RendererAccess.INSTANCE.getRenderer();
         MeshBuilder builder = renderer.meshBuilder();
         QuadEmitter emitter = builder.getEmitter();
-
-        Vec2f uvpos = new Vec2f(0, 0);
-        Vec2f uvsize = new Vec2f(2, 2);
-
         for(Direction direction : Direction.values()) {
+            Vec2f uvpos = new Vec2f(0, 0);
+            Vec2f uvsize = new Vec2f(4, 4);
             emitter
                     .square(direction, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f)
                     .sprite(0, 0, uvpos.x, uvpos.y)
@@ -73,7 +65,6 @@ public class ConnectedBlockModel extends BlockModel {
                     .spriteBake(0, SPRITE, 0)
                     .spriteColor(0, -1, -1, -1, -1)
                     .emit();
-
         }
         mesh = builder.build();
 
@@ -127,14 +118,41 @@ public class ConnectedBlockModel extends BlockModel {
     @Override
     public void emitBlockQuads(BlockRenderView blockRenderView, BlockState blockState, BlockPos blockPos, Supplier<Random> supplier, RenderContext renderContext) {
         // Render function
+        QuadEmitter emitter = renderContext.getEmitter();
+        for(Direction direction : Direction.values()) {
+            Vec2f uvpos;
+            Vec2f uvsize;
+            if(direction == Direction.DOWN || direction == Direction.UP) {
+                uvpos = new Vec2f(0, 0);
+                uvsize = new Vec2f(4, 4);
+            } else {
+                if(blockState.get(FrozenBlockProperties.CONNECTED_UP)) {
+                    if(blockState.get(FrozenBlockProperties.CONNECTED_DOWN)) {
+                        uvpos = new Vec2f(0, 8);
+                        uvsize = new Vec2f(4, 12);
+                    } else {
+                        uvpos = new Vec2f(0, 4);
+                        uvsize = new Vec2f(4, 8);
+                    }
+                } else {
+                    uvpos = new Vec2f(0, 12);
+                    uvsize = new Vec2f(4, 16);
+                }
+            }
+            emitter
+                    .square(direction, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f)
+                    .sprite(0, 0, uvpos.x, uvpos.y)
+                    .sprite(1, 0, uvpos.x, uvsize.y)
+                    .sprite(2, 0, uvsize.x, uvsize.y)
+                    .sprite(3, 0, uvsize.x, uvpos.y)
+                    .spriteBake(0, SPRITE, 0)
+                    .spriteColor(0, -1, -1, -1, -1)
+                    .emit();
 
+        }
 
+        System.out.println("rebuilding chunk at " + blockPos);
         // We just render the mesh
         renderContext.meshConsumer().accept(mesh);
-    }
-
-    @Override
-    public void emitItemQuads(ItemStack itemStack, Supplier<Random> supplier, RenderContext renderContext) {
-
     }
 }
